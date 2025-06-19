@@ -6,14 +6,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
 import torch
-from preprocessing import get_train_test_data
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-from randomforest import export_model
+from neural_net.preprocessing import get_train_test_data
+# from randomforest import export_model
 from utils.graphs import compare, scatter_plot
 from utils.neural_utils import LawDataset, NeuralNetwork, predict
 
@@ -85,7 +85,8 @@ def test_loop(dataloader, model, loss_fn, epoch):
 
 # %%
 loss_fn = nn.BCEWithLogitsLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+# optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 epochs = 10
 for t in range(epochs):
@@ -96,22 +97,22 @@ print("Done!")
 
 
 # %%
-rf, reg = export_model()
+# rf, reg = export_model()
 
-pred_rf = rf.predict(X_test)
-pred_reg = reg.predict(X_test)
+# pred_rf = rf.predict(X_test)
+# pred_reg = reg.predict(X_test)
 
-# Generate predictions for the neural network on the test set
-pred_neural = predict(model, X_test)
+# # Generate predictions for the neural network on the test set
+# pred_neural = predict(model, X_test)
 
-compare(
-    [
-        classification_report(y_test, pred_rf, output_dict=True),
-        classification_report(y_test, pred_reg, output_dict=True),
-        classification_report(y_test, (pred_neural > 0.5).astype(float), output_dict=True)
-    ],
-    model_names=["Random Forest", "Logistic Regression", "Neural Network"],
-    print_output=True,
-)
+# compare(
+#     [
+#         classification_report(y_test, pred_rf, output_dict=True),
+#         classification_report(y_test, pred_reg, output_dict=True),
+#         classification_report(y_test, (pred_neural > 0.5).astype(float), output_dict=True)
+#     ],
+#     model_names=["Random Forest", "Logistic Regression", "Neural Network"],
+#     print_output=True,
+# )
 # %%
 torch.save(model.state_dict(), "model.pth")
