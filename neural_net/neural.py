@@ -1,35 +1,24 @@
 #%%
 import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
 import torch
+from preprocessing import get_train_test_data
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-from neural.preprocessing import get_train_test_data
 from randomforest import export_model
-from utils.graphs import compare
-
-
-class LawDataset(Dataset):
-    def __init__(self, X, y):
-        self.X = pd.DataFrame(X)
-        self.y = pd.Series(y)
-
-    def __len__(self):
-        assert len(self.X) == len(self.y)
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        item = self.X.iloc[idx]
-        label = float(self.y.iloc[idx])
-        return torch.tensor(item, dtype=torch.float32), torch.tensor(label, dtype=torch.float32)
+from utils.graphs import compare, scatter_plot
+from utils.neural_utils import LawDataset, NeuralNetwork, predict
 
 # %%
-X_train, X_test, y_train, y_test = get_train_test_data("law_data.csv", "first_pf")
+X_train, X_test, y_train, y_test = get_train_test_data("../law_data.csv", "first_pf")
 
 training_data = LawDataset(X_train, y_train)
 testing_data = LawDataset(X_test, y_test)
@@ -44,32 +33,9 @@ print(f"Labels batch shape: {train_labels.size()}")
 device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
 print(f"Using {device} device")
 # %%
-class NeuralNetwork(nn.Module):
-    def __init__(self, input_size):
-        super(NeuralNetwork, self).__init__()
-        # print(input_size)
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(input_size, 1),
-        )
-
-    def forward(self, x):
-        logits = self.linear_relu_stack(x.float())
-        return logits
 
 model = NeuralNetwork(input_size=X_train.shape[1]).to(device)
 model
-#%%
-import matplotlib.pyplot as plt
-
-
-def scatter_plot(losses, xlabel="X", ylabel="Y", title="Scatter Plot"):
-    plt.figure(figsize=(8, 6))
-    plt.scatter(losses.keys(), losses.values(), alpha=0.7)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.grid(True)
-    plt.show()
 # %%
 learning_rate = 1e-2
 batch_size = 64
@@ -136,12 +102,7 @@ pred_rf = rf.predict(X_test)
 pred_reg = reg.predict(X_test)
 
 # Generate predictions for the neural network on the test set
-model.eval()
-with torch.no_grad():
-    X_test_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
-    logits = model(X_test_tensor)
-    probs = torch.sigmoid(logits).cpu().numpy().flatten()
-    pred_neural = (probs > 0.5).astype(float)
+pred_neural = predict(model, X_test)
 
 compare(
     [
@@ -153,4 +114,4 @@ compare(
     print_output=True,
 )
 # %%
-y_test.sum()
+torch.save(model.state_dict(), "model.pth")
