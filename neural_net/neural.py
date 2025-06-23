@@ -80,8 +80,9 @@ def test_loop(dataloader, model, loss_fn, epoch):
     correct /= size
     losses[epoch] = test_loss
 
-    scatter_plot(losses, xlabel="Epochs", ylabel="Loss", title="Loss per Epoch")
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+
+scatter_plot(losses, xlabel="Epochs", ylabel="Loss", title="Loss per Epoch")
 
 # %%
 loss_fn = nn.BCEWithLogitsLoss()

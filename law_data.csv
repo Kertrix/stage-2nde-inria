@@ -1,4 +1,4 @@
-,race,sex,LSAT,UGPA,region_first,ZFYA,sander_index,first_pf
+idx,race,sex,LSAT,UGPA,region_first,ZFYA,sander_index,first_pf
 0,White,1,39.0,3.1,GL,-0.98,0.782738095238,1.0
 1,White,1,36.0,3.0,GL,0.09,0.735714285714,1.0
 2,White,2,30.0,3.1,MS,-0.35,0.670238095238,1.0

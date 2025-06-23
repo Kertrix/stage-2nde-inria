@@ -91,3 +91,18 @@ def compare_fairness(results):
         ax.legend(loc="upper left")
     plt.tight_layout()
     plt.show()
+
+# %%
+def fairness_metric(results_groups, result_overall):
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    
+    for idx, cls in enumerate(["0.0", "1.0"]):
+        ax = axes[idx]
+        ax.set_title(f"Fairness for class {cls}")
+        
+        print(results_groups["White"][cls])
+        ax.bar(results_groups.keys(), 
+               [1 / results_groups[k][cls]["recall"]  for k in results_groups.keys()],
+                label="Recall")
+    
+    plt.show()

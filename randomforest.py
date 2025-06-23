@@ -8,6 +8,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import pandas as pd
 import torch
+from fairlearn.metrics import (demographic_parity_difference,
+                               demographic_parity_ratio,
+                               equalized_odds_difference, equalized_odds_ratio,
+                               false_negative_rate)
+from fairlearn.reductions import CorrelationRemover
 from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -25,8 +30,8 @@ from utils.neural_utils import NeuralNetwork, predict
 X_train_data = pd.read_csv("../law_data.csv")
 y_train_data = X_train_data.pop("first_pf")
 
-X_train_data = pd.get_dummies(data=X_train_data)
-X_train, X_test, y_train, y_test = train_test_split(X_train_data, y_train_data, test_size=0.3, random_state=42)
+X_train_data_encoded = pd.get_dummies(data=X_train_data)
+X_train, X_test, y_train, y_test = train_test_split(X_train_data_encoded, y_train_data, test_size=0.3, random_state=42, shuffle=False)
 
 #%%
 neural_network = NeuralNetwork(input_size=X_train.shape[1])
@@ -39,16 +44,18 @@ regressor = LogisticRegression(max_iter=1000, random_state=42)
 regressor.fit(X_train, y_train)
 
 #%%
+predictions = {
+    "rf": model.predict(X_test),
+    "reg": regressor.predict(X_test),
+    "nn": predict(neural_network, prepare_data(X_test))
+}
 
-predictions = model.predict(X_test)
-predictions_reg = regressor.predict(X_test)
-predictions_nn = predict(neural_network, prepare_data(X_test))
-print(classification_report(y_test, predictions_nn))
+print(classification_report(y_test, predictions["nn"]))
 
 compare(
-    [classification_report(y_test, predictions, output_dict=True),
-        classification_report(y_test, predictions_reg, output_dict=True),
-        classification_report(y_test, predictions_nn, output_dict=True)
+    [classification_report(y_test, predictions["rf"], output_dict=True),
+        classification_report(y_test, predictions["reg"], output_dict=True),
+        classification_report(y_test, predictions["nn"], output_dict=True)
         ],
         model_names=["Random Forest", "Logistic Regression", "Neural Network"],
 )
@@ -108,6 +115,7 @@ for ethnicity in ethnicities:
             results_ethicities["nn"][ethnicity] = classification_report(y_test.loc[groups.index], pred_nn, output_dict=True)
             
             print("\n", ethnicity, groups.shape[0])
+            # print(false_negative_rate(y_test.loc[groups.index], pred_rf))
             
             # compare(
             #     [classification_report(y_test.loc[groups.index], pred_rf, output_dict=True),
@@ -162,5 +170,41 @@ for model_name, results in results_regions.items():
 # grid_search = GridSearchCV(rf_model, parameters, cv=5, n_jobs=-1, return_train_score=True, verbose=3)
 # grid_search.fit(X_train_data, y_train_data)
 # %%
-def export_model():
-    return model, regressor
+sf_data = X_train_data[X_train_data['idx'].isin(X_test['idx'])]
+
+assert len(sf_data) == len(X_test)
+assert sf_data['idx'].equals(X_test['idx'])
+
+#%%
+# demographic parity 
+
+print("Demographic Parity Metrics:  \nbased on ethinicity")
+print(demographic_parity_difference(y_test, predictions["reg"], sensitive_features=sf_data["race"]))
+print(demographic_parity_ratio(y_test, predictions["reg"], sensitive_features=sf_data["race"]))
+
+print("\nbased on sex")
+print(demographic_parity_difference(y_test, predictions["reg"], sensitive_features=sf_data["sex"]))
+print(demographic_parity_ratio(y_test, predictions["reg"], sensitive_features=sf_data["sex"]))
+
+# %%
+# equalized odds
+print("Equalized Odds Metrics:  \nbased on ethinicity")
+print(equalized_odds_difference(y_test, predictions["reg"], sensitive_features=sf_data["race"]))
+print(equalized_odds_ratio(y_test, predictions["reg"], sensitive_features=sf_data["race"]))
+
+print("\nbased on sex")
+print(equalized_odds_difference(y_test, predictions["reg"], sensitive_features=sf_data["sex"]))
+print(equalized_odds_ratio(y_test, predictions["reg"], sensitive_features=sf_data["sex"]))
+# %%
+# false negative rate
+ethnicities = ["Amerindian", "Asian", "Black", "Hispanic", "Mexican", "Other", "Puertorican", "White"]
+
+print("False Negative Rate Metrics:  \nbased on ethnicity")
+
+for key, pred in predictions.items():
+    print(f"\n{key} model:")
+    for ethnicity in ethnicities:
+        group_idx = sf_data[sf_data["race"] == ethnicity].index
+        if len(group_idx) > 0:
+            fnr = false_negative_rate(y_test.loc[group_idx], pd.Series(pred, index=y_test.index).loc[group_idx])
+            print(f"{ethnicity}: {fnr}")
