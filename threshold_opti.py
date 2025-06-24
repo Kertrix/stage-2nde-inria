@@ -12,6 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 from utils.graphs import compare
+from utils.pipelines import Pipelines
 
 #%%
 X_train_data = pd.read_csv("law_data.csv")
@@ -25,27 +26,8 @@ X_train, X_test, y_train, y_test, A_train, A_test = train_test_split(
 )
 
 #%%
-categorical_transformer = Pipeline(
-    [
-        ("ohe", OneHotEncoder(handle_unknown="ignore"))
-    ]
-)
-
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("categorical", categorical_transformer, X_train_data.columns)
-    ]
-)
-
-pipeline = Pipeline(
-    [
-        ("preprocessor", preprocessor),
-        ("classifier", LogisticRegression(max_iter=1000, random_state=42)),
-    ]
-)
-#%%
 threshold_optimizer = ThresholdOptimizer(
-    estimator=pipeline,
+    estimator=Pipelines(X_train_data.columns).regressor(),
     constraints="equalized_odds",
     objective="balanced_accuracy_score",
     # prefit=True,
