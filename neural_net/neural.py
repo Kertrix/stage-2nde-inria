@@ -38,10 +38,6 @@ batch_size = 64
 epochs = 10
 
 losses = {}
-
-
-# assert len(sf_train) == len(X_train)
-
 #%%
 λ = np.linspace(1e-3, 1, 10)
 accuracy = []
@@ -111,56 +107,3 @@ for i in tqdm(list(λ)):
         test_loop(test_dataloader, model, loss_fn, t)
 print("Done!")
 scatter_plot(losses, xlabel="Epochs", ylabel="Loss", title="Loss per Epoch")
-
-#%%
-
-accuracies_mean = np.reshape(accuracies_all, ((10, 20))).mean(axis=1)
-accuracies = [accuracies_all[k * 20] for k in range(10)]
-
-
-plt.bar(list(map(str, list(λ))), accuracies_mean)
-plt.ylim(min(accuracies_mean) - 0.001, max(accuracies_mean) + 0.001)  # Zoom in on the top of the bars
-plt.ylabel("Accuracy")
-plt.xlabel("λ")
-plt.title("Accuracy vs λ (zoomed on top)")
-plt.show()
-
-#%%
-plt.bar(list(map(str, list(λ))), accuracies)
-plt.ylim(min(accuracies) - 0.001, max(accuracies) + 0.001)  # Zoom in on the top of the bars
-plt.ylabel("Accuracy")
-plt.xlabel("λ")
-plt.title("Accuracy vs λ (zoomed on top)")
-plt.show()
-
-#%%
-dems = np.reshape(dems_all, ((10, 20))).mean(axis=1)
-plt.bar(list(map(str, list(λ))), accuracies / dems)
-# plt.ylim(min(dems) - 0.001, max(dems) + 0.001)  # Zoom in on the top of the bars
-plt.ylabel("Demographic Parity Difference")
-plt.xlabel("λ")
-plt.title("Demographic Parity vs λ (zoomed on top)")
-plt.show()
-
-#%%
-print(demographic_parity_difference(y_test, predict(model, X_test), sensitive_features=sf_test))
-# %%
-# rf, reg = export_model()
-
-# pred_rf = rf.predict(X_test)
-# pred_reg = reg.predict(X_test)
-
-# # Generate predictions for the neural network on the test set
-# pred_neural = predict(model, X_test)
-
-# compare(
-#     [
-#         classification_report(y_test, pred_rf, output_dict=True),
-#         classification_report(y_test, pred_reg, output_dict=True),
-#         classification_report(y_test, (pred_neural > 0.5).astype(float), output_dict=True)
-#     ],
-#     model_names=["Random Forest", "Logistic Regression", "Neural Network"],
-#     print_output=True,
-# )
-# %%
-torch.save(model.state_dict(), "model.pth")

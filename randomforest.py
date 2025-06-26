@@ -2,6 +2,7 @@
 import os
 import sys
 
+from utils.fairness_metrics import FairnessMetrics
 from utils.pipelines import Pipelines
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,20 +22,15 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from neural_net.preprocessing import prepare_data
+from neural_net.preprocessing import get_train_test_data, prepare_data
 from utils.graphs import compare, compare_fairness, compare_for_one_model
 from utils.neural_utils import NeuralNetwork, predict
 
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 ethnicities = ["Amerindian", "Asian", "Black", "Hispanic", "Mexican", "Other", "Puertorican", "White"]
+X_train, X_test, y_train, y_test, sf_train, sf_test = get_train_test_data("law_data.csv", "first_pf", encode=False)
 
-X_train_data = pd.read_csv("law_data.csv")
-y_train_data = X_train_data.pop("first_pf")
-
-A = X_train_data["race"]
-
-X_train, X_test, y_train, y_test, sf_train, sf_test = train_test_split(X_train_data, y_train_data, A, test_size=0.3, random_state=42, shuffle=True)
 
 print(X_test.shape)
 #%%
@@ -53,7 +49,7 @@ print(X_test.shape)
 predictions = {
     "rf": rf.predict(X_test),
     "reg": regressor.predict(X_test),
-    "nn": predict(neural_network, prepare_data(X_test))
+    # "nn": predict(neural_network, prepare_data(X_test))
 }
 
 # print(classification_report(y_test, predictions["nn"]))
@@ -61,7 +57,7 @@ predictions = {
 compare(
     [classification_report(y_test, predictions["rf"], output_dict=True),
         classification_report(y_test, predictions["reg"], output_dict=True),
-        classification_report(y_test, predictions["nn"], output_dict=True)
+        # classification_report(y_test, predictions["nn"], output_dict=True)
         ],
         model_names=["Random Forest", "Logistic Regression", "Neural Network"],
 )
@@ -192,7 +188,6 @@ print(equalized_odds_difference(y_test, predictions["reg"], sensitive_features=s
 print(equalized_odds_ratio(y_test, predictions["reg"], sensitive_features=sf_data["sex"]))
 # %%
 # false negative rate
-ethnicities = ["Amerindian", "Asian", "Black", "Hispanic", "Mexican", "Other", "Puertorican", "White"]
 
 print("False Negative Rate Metrics:  \nbased on ethnicity")
 
@@ -204,49 +199,8 @@ for key, pred in predictions.items():
             fnr = false_negative_rate(y_test.loc[group_idx], pd.Series(pred, index=y_test.index).loc[group_idx])
             print(f"{ethnicity}: {fnr}")
 #%%
-# --- CorrelationRemover for fairness on 'race' ---
-def cr():
-    race_columns = [col for col in X_train.columns if col.startswith('race_')]
 
-    corr_remover = CorrelationRemover(sensitive_feature_ids=race_columns)
+ethnicities = ["Amerindian", "Asian", "Black", "Hispanic", "Mexican", "Other", "Puertorican", "White"]
 
-    dcr = corr_remover.fit_transform(X_train)
-    dcr = pd.DataFrame(dcr, columns=X_train.columns.drop(race_columns))
-    dcr[race_columns] = X_train[race_columns].reset_index(drop=True)
-
-    dcr_test = corr_remover.fit_transform(X_test)
-    dcr_test = pd.DataFrame(dcr_test, columns=X_test.columns.drop(race_columns))
-    dcr_test[race_columns] = X_test[race_columns].reset_index(drop=True         )
-
-    # Train a new logistic regression on the transformed data
-    regressor_corr = LogisticRegression(max_iter=1000, random_state=42)
-    regressor_corr.fit(dcr, y_train)
-
-    # Predict and evaluate
-    pred_corr = regressor_corr.predict(dcr_test)
-    print("\nClassification report for Logistic Regression with CorrelationRemover:")
-    print(classification_report(y_test, pred_corr))
-
-    # Fairness metrics for the new model
-    print("\nDemographic Parity Metrics (CorrelationRemover):  based on ethnicity")
-    sf_data_corr = X_train_data[X_train_data['idx'].isin(X_test['idx'])]
-    print(demographic_parity_difference(y_test, pred_corr, sensitive_features=sf_data_corr["race"]))
-    print(demographic_parity_ratio(y_test, pred_corr, sensitive_features=sf_data_corr["race"]))
-
-    print("\nDemographic Parity Metrics (CorrelationRemover):  based on sex")
-    print(demographic_parity_difference(y_test, pred_corr, sensitive_features=sf_data_corr["sex"]))
-    print(demographic_parity_ratio(y_test, pred_corr, sensitive_features=sf_data_corr["sex"]))
-
-    print("\nEqualized Odds Metrics (CorrelationRemover):  based on ethnicity")
-    print(equalized_odds_difference(y_test, pred_corr, sensitive_features=sf_data_corr["race"]))
-    print(equalized_odds_ratio(y_test, pred_corr, sensitive_features=sf_data_corr["race"]))
-
-    print("\nEqualized Odds Metrics (CorrelationRemover):  based on sex")
-    print(equalized_odds_difference(y_test, pred_corr, sensitive_features=sf_data_corr["sex"]))
-    print(equalized_odds_ratio(y_test, pred_corr, sensitive_features=sf_data_corr["sex"]))
-
-    compare(
-        [classification_report(y_test, pred_corr, output_dict=True)],
-        model_names=["Logistic Regression with CorrelationRemover"],
-        label="Logistic Regression with CorrelationRemover"
-    )
+metrics = FairnessMetrics(y_true=y_test, y_pred=predictions["reg"], sf_data=sf_test)
+print(metrics.fnr(ethnicities))

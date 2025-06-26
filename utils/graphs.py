@@ -3,7 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 
-def compare(results, model_names=None, print_output=False, label=None):
+def compare(results: list[dict], model_names=None, print_output=False, label=None):
     """
     results: list of dicts (classification reports as dicts)
     model_names: list of str, names for each model

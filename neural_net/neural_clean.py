@@ -33,9 +33,14 @@ batch_size = 64
 epochs = 10
 
 losses = {}
+# λ = None
 λ = 0.334
 
 def train_loop(dataloader, model, loss_fn, optimizer, lambda_value = None):
+    if lambda_value:
+        print("Training with fairness lambda λ = " + str(lambda_value))
+    else:
+        print("Training without fairness lambda λ")
     size = len(dataloader.dataset)
     model.train()
     for batch, (X, y) in enumerate(dataloader):
@@ -88,11 +93,13 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 for i in range(epochs):
     print(f"Epoch {i+1}\n-------------------------------")
-    train_loop(train_dataloader, model, loss_fn, optimizer)
+    train_loop(train_dataloader, model, loss_fn, optimizer, λ)
     test_loop(test_dataloader, model, loss_fn, i)
 
 scatter_plot(losses, xlabel="Epochs", ylabel="Loss", title="Loss per Epoch")
 print("Done!")
 
 #%%
-torch.save(model.state_dict(), "neural_net/model.pth")
+file_name = "model_with_fairness" if λ else "model"
+torch.save(model.state_dict(), f"neural_net/{file_name}.pth")
+print(f"Saved PyTorch Model State to neural_net/{file_name}.pth")
