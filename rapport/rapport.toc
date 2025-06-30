@@ -1,0 +1,19 @@
+\babel@toc {french}{}\relax 
+\contentsline {section}{\numberline {1}Présentation de l'entreprise}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Fiche synthétique}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Qu'est-ce que l'INRIA ?}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Présentation de l'équipe SODA}{4}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Mon travail de stage}{6}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Intelligence artificielle et apprentissage automatique}{6}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Problématiques des biais et de l'équité}{6}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Méthodes d'atténuation des biais}{8}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Experimentation}{8}{subsection.2.4}%
+\contentsline {subsubsection}{\numberline {2.4.1}Données}{8}{subsubsection.2.4.1}%
+\contentsline {subsubsection}{\numberline {2.4.2}Modèles}{11}{subsubsection.2.4.2}%
+\contentsline {subsubsection}{\numberline {2.4.3}Méthode de réduction des biais}{13}{subsubsection.2.4.3}%
+\contentsline {subsubsection}{\numberline {2.4.4}Analyse et interprétation}{16}{subsubsection.2.4.4}%
+\contentsline {section}{\numberline {3}Réflexions personnelles}{17}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Comparaison avec le stage de 3e}{17}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Activtés spécifiques au domaine de la recherche publique}{17}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Conclusion}{18}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Remerciements}{18}{section.4}%
